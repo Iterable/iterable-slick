@@ -24,6 +24,11 @@ sealed abstract class Query[+E, U, C[_]] extends QueryBase[C[U]] { self =>
   def shaped: ShapedValue[_ <: E, U]
   final lazy val packed = shaped.toNode
 
+  /** Add a comment on top of the query */
+  def withComment(comment: String): Query[E, U, C] = {
+    new WrappingQuery[E, U, C](Comment(comment, toNode), shaped)
+  }
+
   /** Build a new query by applying a function to all elements of this query
     * and using the elements of the resulting queries. This corresponds to an
     * implicit inner join in SQL. */
@@ -59,7 +64,7 @@ sealed abstract class Query[+E, U, C[_]] extends QueryBase[C[U]] { self =>
   def filterOpt[V, T : CanBeQueryCondition](optValue: Option[V])(f: (E, V) => T): Query[E, U, C] =
     optValue.map(v => withFilter(a => f(a, v))).getOrElse(this)
 
-  /** Applies the given filter function, if the boolean parameter `p` evaluates to true. 
+  /** Applies the given filter function, if the boolean parameter `p` evaluates to true.
     * If not, the filter will not be part of the query. */
   def filterIf[T : CanBeQueryCondition](p: Boolean)(f: E => T): Query[E, U, C] =
     if (p) withFilter(f) else this
